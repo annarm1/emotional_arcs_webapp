@@ -1,10 +1,10 @@
 import streamlit as st
 import re
-import pymorphy2
+import pymorphy3
 from preprocessing import preprocess, clean_text
 
 # Инициализация морфологического анализатора
-morph = pymorphy2.MorphAnalyzer()
+morph = pymorphy3.MorphAnalyzer()
 
 st.title("Прототип веб-ресурса для предобработки текста")
 st.write("Загрузите текстовый файл в формате .txt для получения очищенного текста и списка лемм.")
