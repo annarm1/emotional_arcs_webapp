@@ -1,28 +1,132 @@
 import streamlit as st
-import re
-import pymorphy3
-from preprocessing import preprocess, clean_text
 
-# Инициализация морфологического анализатора
-morph = pymorphy3.MorphAnalyzer()
+from tei_parser import extract_paragraphs
+from segmentation import segment_by_paragraphs, words_in_par_count, window_with_overlap
+from sentiment_model import estimate_sentiment
+from utils import smooth_signal, plot_curve_interactive
 
-st.title("Прототип веб-ресурса для предобработки текста")
-st.write("Загрузите текстовый файл в формате .txt для получения очищенного текста и списка лемм.")
+def prepare_segments_for_download(segments, sentiments):
+    lines = []
 
-uploaded_file = st.file_uploader("Выберите файл", type=["txt"])
+    for i, (segment, sentiment) in enumerate(zip(segments, sentiments), start=1):
+        lines.append(f"=== Сегмент {i} ===")
+        lines.append(f"Тональность: {round(sentiment, 3)}")
+        lines.append(segment)
+        lines.append("")
 
-if uploaded_file is not None:
-    # Чтение файла
-    raw_text = uploaded_file.read().decode("utf-8")
+    return "\n".join(lines)
+
+
+with st.spinner("Загрузка модели..."):
+    from sentiment_model import load_model
+    load_model()
+
+st.title("📊 Анализ эмоциональной динамики текста")
+
+# --- 1. Загрузка файла ---
+uploaded_file = st.file_uploader(
+        "Загрузите документ с TEI-разметкой",
+        type=["xml"]
+    )
+
+if uploaded_file:
+
+    st.success("Файл успешно загружен!")
+
+    # --- Парсинг ---
+    paragraphs = extract_paragraphs(uploaded_file)
+   
+    st.write(f"Количество параграфов: {len(paragraphs)}")
+    st.write(f"Среднее количество слов в одном параграфе: {words_in_par_count(paragraphs)}")
+
+
+
+    st.subheader("⚙️ Параметры сегментации")
+
+    st.info(
+    "Сегменты формируются на основе абзацев. "
+    "Контекстное окно добавляет предложения из предыдущего сегмента, "
+    "что делает эмоциональную кривую более плавной."
+    )
     
-    st.subheader("Исходный текст (200 символов)")
-    st.text_area("Текст", raw_text[:200], height=200)
+
+    min_words = st.slider(
+        "Минимальное количество слов в сегменте",
+        min_value=50,
+        max_value=200,
+        value=150,
+        step=10
+    )
+
+    max_words = st.slider(
+        "Максимальное количество слов в сегменте",
+        min_value=100,
+        max_value=400,
+        value=300,
+        step=10
+    )
+        
+    if min_words >= max_words:
+        st.warning("Минимальное значение должно быть меньше максимального")
+        st.stop()
+        
+    # --- Сегменты ---
+    segments = segment_by_paragraphs(
+        paragraphs,
+        min_words,
+        max_words
+    )
+
+    st.write(f"📊 Количество сегментов: {len(segments)}")
     
-    cleaned_text = clean_text(raw_text)
-    lemmas = preprocess(raw_text)
-    
-    st.subheader("Очищенный текст")
-    st.text_area("После предобработки (200 символов)", cleaned_text[:200], height=200)
-    
-    st.subheader("Леммы")
-    st.text_area("Список лемм (первые 10)", " ".join(lemmas[:10]), height=200)
+
+    st.subheader("🔁 Параметры контекстного окна")
+
+    use_overlap = st.checkbox(
+        "Добавить контекст предыдущего сегмента",
+        value=True
+    )
+
+    overlap_n = st.slider(
+        "Количество предложений из предыдущего сегмента",
+        min_value=0,
+        max_value=5,
+        value=2
+    )
+
+    if use_overlap and overlap_n > 0:
+        segments = window_with_overlap(segments, overlap_n)
+
+    # --- 3. Общая эмоциональная динамика ---
+    st.subheader("📈 Эмоциональная динамика")
+
+    if st.button("Построить эмоциональную арку"):
+
+        with st.spinner("Анализируем текст..."):
+
+            sentiments = estimate_sentiment(segments)
+            smoothed = smooth_signal(sentiments)
+
+        st.success("Готово!")
+
+        fig = plot_curve_interactive(
+            smoothed,
+            "Общая эмоциональная динамика"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        txt_data = prepare_segments_for_download(segments, sentiments)
+        
+        st.download_button(
+            label="📥 Скачать сегменты (.txt)",
+            data=txt_data,
+            file_name="segments.txt",
+            mime="text/plain"
+        )
+
+        # --- дополнительная инфа ---
+        st.write("📊 Статистика:")
+
+        st.write(f"- Количество сегментов: {len(segments)}")
+        st.write(f"- Средняя тональность: {sum(sentiments)/len(sentiments):.3f}")

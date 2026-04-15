@@ -1,2 +1,10 @@
 streamlit
+torch
+transformers
+matplotlib
+scipy
+lxml
+numpy
+nltk
+plotly
 pymorphy3

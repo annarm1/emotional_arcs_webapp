@@ -1,5 +1,7 @@
 import re
-import pymorphy3 # type: ignore
+import pymorphy3  # type: ignore
+import nltk
+nltk.download('punkt')
 
 morph = pymorphy3.MorphAnalyzer()
 
@@ -17,24 +19,11 @@ def clean_text(text: str) -> str:
     return text.strip()
 
 
-def lemmatize(words: list[str]) -> list[str]:
-    """
-    Лемматизация pymorphy
-    
-    Возвращает словарь лемм
-    """
-    return [morph.parse(word)[0].normal_form for word in words]
+def lemmatize(text: str) -> list[str]:
+    words = text.lower().split()
+    lemmas = [morph.parse(word)[0].normal_form for word in words]
+    return lemmas
 
-
-def preprocess(text: str) -> list[str]:
-    """"
-    Предворительная обработка текста
-    - очистка
-    - токенизация по пробелам
-    - лемматизация
-    
-    Возвращает словарь из лемм
-    """
-    cleaned = clean_text(text)
-    tokens = cleaned.split()
-    return lemmatize(tokens)
+def sent_tokenize(text:str) -> list[str]:
+    sentences = nltk.sent_tokenize(text)
+    return sentences
