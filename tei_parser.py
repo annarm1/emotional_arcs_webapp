@@ -25,8 +25,8 @@ def extract_paragraphs(file):
     return paragraphs
 
 
-def extract_character_replicas(xml_path):
-    tree = etree.parse(xml_path)
+def extract_character_replicas(file):
+    tree = etree.parse(file)
     root = tree.getroot()
 
     body = root.find(".//{*}body")
@@ -45,7 +45,7 @@ def extract_character_replicas(xml_path):
         if not who:
             continue
 
-        # 🔴 разбиваем нескольких говорящих
+        # разбиваем нескольких говорящих
         speakers = re.split(r"[ ,]+", who.strip())
 
         # текст
@@ -55,7 +55,7 @@ def extract_character_replicas(xml_path):
         if not text:
             continue
 
-        # 🔴 добавляем каждому персонажу
+        # добавляем каждому персонажу
         for speaker in speakers:
             if speaker:  # защита от пустых строк
                 characters[speaker].append(text)

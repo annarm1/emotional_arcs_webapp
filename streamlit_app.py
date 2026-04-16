@@ -27,17 +27,15 @@ mode = st.radio(
     ["Общая сюжетная арка", "Арка персонажа"]
 )
 
+# СЮЖЕТНАЯ АРКА
+if mode == "Общая сюжетная арка":
 
-# --- 1. Загрузка файла ---
-uploaded_file = st.file_uploader(
-        "Загрузите документ с TEI-разметкой",
-        type=["xml"]
-    )
+    uploaded_file = st.file_uploader(
+            "Загрузите документ с TEI-разметкой",
+            type=["xml"]
+        )
 
-if uploaded_file:
-    # СЮЖЕТНАЯ АРКА
-    if mode == "Общая сюжетная арка":
-
+    if uploaded_file:
         st.success("Файл успешно загружен!")
 
         # --- Парсинг ---
@@ -142,7 +140,13 @@ if uploaded_file:
             st.write(f"- Средняя тональность: {sum(sentiments)/len(sentiments):.3f}")
 
     # АРКИ ПЕРСОНАЖЕЙ
-    elif mode == "Арка персонажа":
+elif mode == "Арка персонажа":
+    uploaded_file = st.file_uploader(
+            "Загрузите документ с TEI-разметкой",
+            type=["xml"]
+        )
+    
+    if uploaded_file:
         replicas = extract_character_replicas(uploaded_file)
         characters = []
         for k, v in replicas.items():
