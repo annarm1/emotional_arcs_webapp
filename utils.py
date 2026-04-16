@@ -12,9 +12,9 @@ def normalize_positions(n):
     return np.linspace(0, 1, n)
 
 
-def plot_curve_interactive(smoothed, title=""):
+def plot_curve_interactive(smoothed, sentiments, title=""):
     x = list(range(1, len(smoothed) + 1))  # номера сегментов
-
+    
     fig = go.Figure()
 
     fig.add_trace(go.Scatter(
@@ -31,6 +31,15 @@ def plot_curve_interactive(smoothed, title=""):
         y=0,
         line_dash="dash",
         line_color="gray",
+        line_width=2
+    )
+
+    # линия средней тональности
+    fig.add_hline(
+        y=sum(sentiments)/len(sentiments),
+        line_dash="dot",
+        line_color="orange",
+        line_width=2
     )
 
     fig.update_layout(

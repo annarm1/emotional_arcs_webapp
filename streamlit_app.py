@@ -1,6 +1,6 @@
 import streamlit as st
 
-from tei_parser import extract_paragraphs
+from tei_parser import extract_paragraphs, extract_character_replicas
 from segmentation import segment_by_paragraphs, words_in_par_count, window_with_overlap
 from sentiment_model import estimate_sentiment
 from utils import smooth_signal, plot_curve_interactive
@@ -16,12 +16,17 @@ def prepare_segments_for_download(segments, sentiments):
 
     return "\n".join(lines)
 
-
 with st.spinner("Загрузка модели..."):
     from sentiment_model import load_model
     load_model()
 
 st.title("📊 Анализ эмоциональной динамики текста")
+
+mode = st.radio(
+    "Выберите тип анализа",
+    ["Общая сюжетная арка", "Арка персонажа"]
+)
+
 
 # --- 1. Загрузка файла ---
 uploaded_file = st.file_uploader(
@@ -30,103 +35,234 @@ uploaded_file = st.file_uploader(
     )
 
 if uploaded_file:
+    # СЮЖЕТНАЯ АРКА
+    if mode == "Общая сюжетная арка":
 
-    st.success("Файл успешно загружен!")
+        st.success("Файл успешно загружен!")
 
-    # --- Парсинг ---
-    paragraphs = extract_paragraphs(uploaded_file)
-   
-    st.write(f"Количество параграфов: {len(paragraphs)}")
-    st.write(f"Среднее количество слов в одном параграфе: {words_in_par_count(paragraphs)}")
-
-
-
-    st.subheader("⚙️ Параметры сегментации")
-
-    st.info(
-    "Сегменты формируются на основе абзацев. "
-    "Контекстное окно добавляет предложения из предыдущего сегмента, "
-    "что делает эмоциональную кривую более плавной."
-    )
+        # --- Парсинг ---
+        paragraphs = extract_paragraphs(uploaded_file)
     
+        st.write(f"Количество параграфов: {len(paragraphs)}")
+        st.write(f"Среднее количество слов в одном параграфе: {words_in_par_count(paragraphs)}")
 
-    min_words = st.slider(
-        "Минимальное количество слов в сегменте",
-        min_value=50,
-        max_value=200,
-        value=150,
-        step=10
-    )
 
-    max_words = st.slider(
-        "Максимальное количество слов в сегменте",
-        min_value=100,
-        max_value=400,
-        value=300,
-        step=10
-    )
+
+        st.subheader("⚙️ Параметры сегментации")
+
+        st.info(
+        "Сегменты формируются на основе абзацев. "
+        "Контекстное окно добавляет предложения из предыдущего сегмента, "
+        "что делает эмоциональную кривую более плавной."
+        )
         
-    if min_words >= max_words:
-        st.warning("Минимальное значение должно быть меньше максимального")
-        st.stop()
-        
-    # --- Сегменты ---
-    segments = segment_by_paragraphs(
-        paragraphs,
-        min_words,
-        max_words
-    )
 
-    st.write(f"📊 Количество сегментов: {len(segments)}")
-    
-
-    st.subheader("🔁 Параметры контекстного окна")
-
-    use_overlap = st.checkbox(
-        "Добавить контекст предыдущего сегмента",
-        value=True
-    )
-
-    overlap_n = st.slider(
-        "Количество предложений из предыдущего сегмента",
-        min_value=0,
-        max_value=5,
-        value=2
-    )
-
-    if use_overlap and overlap_n > 0:
-        segments = window_with_overlap(segments, overlap_n)
-
-    # --- 3. Общая эмоциональная динамика ---
-    st.subheader("📈 Эмоциональная динамика")
-
-    if st.button("Построить эмоциональную арку"):
-
-        with st.spinner("Анализируем текст..."):
-
-            sentiments = estimate_sentiment(segments)
-            smoothed = smooth_signal(sentiments)
-
-        st.success("Готово!")
-
-        fig = plot_curve_interactive(
-            smoothed,
-            "Общая эмоциональная динамика"
+        min_words = st.slider(
+            "Минимальное количество слов в сегменте",
+            min_value=10,
+            max_value=200,
+            value=150,
+            step=10
         )
 
-        st.plotly_chart(fig, use_container_width=True)
-
-        txt_data = prepare_segments_for_download(segments, sentiments)
-        
-        st.download_button(
-            label="📥 Скачать сегменты (.txt)",
-            data=txt_data,
-            file_name="segments.txt",
-            mime="text/plain"
+        max_words = st.slider(
+            "Максимальное количество слов в сегменте",
+            min_value=20,
+            max_value=400,
+            value=300,
+            step=10
+        )
+            
+        if min_words >= max_words:
+            st.warning("Минимальное значение должно быть меньше максимального")
+            st.stop()
+            
+        # --- Сегменты ---
+        segments = segment_by_paragraphs(
+            paragraphs,
+            min_words,
+            max_words
         )
 
-        # --- дополнительная инфа ---
-        st.write("📊 Статистика:")
+        st.write(f"📊 Количество сегментов: {len(segments)}")
+        
 
-        st.write(f"- Количество сегментов: {len(segments)}")
-        st.write(f"- Средняя тональность: {sum(sentiments)/len(sentiments):.3f}")
+        st.subheader("🔁 Параметры контекстного окна")
+
+        use_overlap = st.checkbox(
+            "Добавить контекст предыдущего сегмента",
+            value=True
+        )
+
+        if use_overlap:
+            overlap_n = st.slider(
+                "Количество предложений из предыдущего сегмента",
+                min_value=1,
+                max_value=5,
+                value=2
+            )
+
+        if use_overlap and overlap_n > 0:
+            segments = window_with_overlap(segments, overlap_n)
+
+        # --- 3. Общая эмоциональная динамика ---
+        st.subheader("📈 Эмоциональная динамика")
+
+        if st.button("Построить эмоциональную арку"):
+
+            with st.spinner("Анализируем текст..."):
+
+                sentiments = estimate_sentiment(segments)
+                smoothed = smooth_signal(sentiments)
+
+
+            txt_data = prepare_segments_for_download(segments, sentiments)
+            
+            st.download_button(
+                label="📥 Скачать сегменты (.txt)",
+                data=txt_data,
+                file_name="segments.txt",
+                mime="text/plain"
+            )
+
+            st.success("Готово!")
+
+            fig = plot_curve_interactive(
+                smoothed,
+                sentiments,
+                "Общая эмоциональная динамика"
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+            # --- дополнительная инфа ---
+            st.write("📊 Статистика:")
+
+            st.write(f"- Количество сегментов: {len(segments)}")
+            st.write(f"- Средняя тональность: {sum(sentiments)/len(sentiments):.3f}")
+
+    # АРКИ ПЕРСОНАЖЕЙ
+    elif mode == "Арка персонажа":
+        replicas = extract_character_replicas(uploaded_file)
+        characters = []
+        for k, v in replicas.items():
+            if len(v) >= 5: 
+                characters.append(k)
+
+        st.write(f"Количество персонажей: {len(characters)}")
+
+        character_map = {
+            k.strip('#'): v
+            for k, v in replicas.items()
+            if len(v) >= 5
+        }
+
+        # сортировка по количеству реплик
+        characters = sorted(
+            character_map.keys(),
+            key=lambda x: len(character_map[x]),
+            reverse=True
+        )
+
+        selected_character = st.selectbox(
+            "Выберите персонажа",
+            characters
+        )
+
+        char_replicas = character_map[selected_character]
+
+        st.write(
+           f"Количество реплик: {len(char_replicas)}"
+        )
+
+        st.subheader("⚙️ Параметры сегментации")
+
+        st.info(
+        "Сегменты формируются на основе абзацев. "
+        "Контекстное окно добавляет предложения из предыдущего сегмента, "
+        "что делает эмоциональную кривую более плавной."
+        )
+
+        paragraphs = char_replicas
+
+        min_words = st.slider(
+            "Минимальное количество слов в сегменте",
+            min_value=20,
+            max_value=150,
+            value=50,
+            step=10
+        )
+
+        max_words = st.slider(
+            "Максимальное количество слов в сегменте",
+            min_value=50,
+            max_value=300,
+            value=100,
+            step=10
+        )
+            
+        if min_words >= max_words:
+            st.warning("Минимальное значение должно быть меньше максимального")
+            st.stop()
+
+        segments = segment_by_paragraphs(
+            paragraphs,
+            min_words=min_words,
+            max_words=max_words
+        )
+
+        st.write(f"📊 Количество сегментов: {len(segments)}")        
+
+        st.subheader("🔁 Параметры контекстного окна")
+
+        use_overlap = st.checkbox(
+            "Добавить контекст предыдущего сегмента",
+            value=True
+        )
+
+        if use_overlap:
+            overlap_n = st.slider(
+                "Количество предложений из предыдущего сегмента",
+                min_value=1,
+                max_value=3,
+                value=1
+            )
+        
+        if use_overlap and overlap_n > 0:
+            segments = window_with_overlap(segments, overlap_n)
+
+        # --- 3. Общая эмоциональная динамика ---
+        st.subheader("📈 Эмоциональная динамика")
+
+        if st.button("Построить эмоциональную арку"):
+
+            with st.spinner("Анализируем текст..."):
+
+                sentiments = estimate_sentiment(segments)
+                smoothed = smooth_signal(sentiments)
+
+
+            txt_data = prepare_segments_for_download(segments, sentiments)
+            
+            st.download_button(
+                label="📥 Скачать сегменты (.txt)",
+                data=txt_data,
+                file_name="segments.txt",
+                mime="text/plain"
+            )
+
+            st.success("Готово!")
+
+            fig = plot_curve_interactive(
+                smoothed,
+                sentiments,
+                "Общая эмоциональная динамика"
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+            # --- дополнительная инфа ---
+            st.write("📊 Статистика:")
+
+            st.write(f"- Количество сегментов: {len(segments)}")
+            st.write(f"- Средняя тональность: {sum(sentiments)/len(sentiments):.3f}")
