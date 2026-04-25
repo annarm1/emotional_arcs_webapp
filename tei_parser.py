@@ -116,6 +116,6 @@ def replace_ids_with_names(replicas, char_map):
         clean_id = speaker_id.replace("#", "")
         name = char_map.get(clean_id, speaker_id)
 
-        updated[name] = texts
+        updated[f'{name}, {speaker_id}'] = texts
 
     return updated
