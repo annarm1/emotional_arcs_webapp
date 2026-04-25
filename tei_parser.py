@@ -1,6 +1,33 @@
 from lxml import etree
 from collections import defaultdict
 import re
+import nltk
+import zipfile
+import io
+
+
+def extract_txt_from_zip(uploaded_file):
+    z = zipfile.ZipFile(uploaded_file)
+
+    texts = {}
+
+    for name in z.namelist():
+        if name.endswith(".txt"):
+            with z.open(name) as f:
+                content = f.read().decode("utf-8")
+                texts[name] = content
+
+    return texts
+
+
+def parse_txt(file):
+    text = file.read().decode("utf-8")
+
+    paragraphs = [p.strip() for p in text.split("\n") if p.strip()]
+    sentences = nltk.sent_tokenize(text)
+
+    return paragraphs, sentences
+
 
 def extract_paragraphs(file):
     tree = etree.parse(file)
