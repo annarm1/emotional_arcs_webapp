@@ -1,7 +1,7 @@
 import streamlit as st
 import nltk
 
-from tei_parser import extract_paragraphs, extract_character_replicas, extract_txt_from_zip, parse_txt
+from tei_parser import extract_paragraphs, extract_character_replicas, extract_txt_from_zip, parse_txt, extract_character_names, replace_ids_with_names
 from segmentation import segment_by_paragraphs, words_in_par_count, window_with_overlap
 from sentiment_model import estimate_sentiment
 from utils import smooth_signal, plot_curve_interactive
@@ -150,30 +150,25 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
             )
         
         if uploaded_file:
+            character_map = extract_character_names(uploaded_file)
+            uploaded_file.seek(0)
             replicas = extract_character_replicas(uploaded_file)
-            character_map = {
-                k.strip("#"): v
-                for k, v in replicas.items()
-                if len(v) >= 5
-            }
-            if not character_map:
+            replicas = replace_ids_with_names(replicas, character_map)
+            
+            if not replicas:
                 st.warning("Недостаточно данных по персонажам")
                 st.stop()
             
             # сортировка по количеству реплик
-            characters = sorted(
-                character_map.keys(),
-                key=lambda x: len(character_map[x]),
-                reverse=True
-            )
+            characters = sorted(replicas.keys(), key=lambda x: len(replicas[x]), reverse=True)
 
             selected = st.selectbox(
                 "Выберите персонажа",
-                [f"{c} ({len(character_map[c])})" for c in characters]
+                characters
             )
 
             selected_character = selected.split(" (")[0]
-            char_replicas = character_map[selected_character]
+            char_replicas = replicas[selected_character]
 
             st.write(
             f"Количество реплик: {len(char_replicas)}"

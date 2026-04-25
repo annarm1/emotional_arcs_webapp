@@ -52,8 +52,8 @@ def extract_paragraphs(file):
     return paragraphs
 
 
-def extract_character_replicas(file):
-    tree = etree.parse(file)
+def extract_character_replicas(xml_path):
+    tree = etree.parse(xml_path)
     root = tree.getroot()
 
     body = root.find(".//{*}body")
@@ -72,7 +72,7 @@ def extract_character_replicas(file):
         if not who:
             continue
 
-        # разбиваем нескольких говорящих
+        # 🔴 разбиваем нескольких говорящих
         speakers = re.split(r"[ ,]+", who.strip())
 
         # текст
@@ -82,9 +82,40 @@ def extract_character_replicas(file):
         if not text:
             continue
 
-        # добавляем каждому персонажу
+        # 🔴 добавляем каждому персонажу
         for speaker in speakers:
             if speaker:  # защита от пустых строк
                 characters[speaker].append(text)
 
     return dict(characters)
+
+def extract_character_names(file):
+    tree = etree.parse(file)
+    root = tree.getroot()
+
+    char_map = {}
+
+    for person in root.findall(".//{*}listPerson/{*}person"):
+        # xml:id
+        char_id = person.get("{http://www.w3.org/XML/1998/namespace}id")
+
+        # первый persName (ТОЛЬКО прямой, не вложенный)
+        pers_name = person.find("{*}persName")
+
+        if char_id and pers_name is not None:
+            name = "".join(pers_name.itertext()).strip()
+            char_map[char_id] = name
+
+    return char_map
+
+
+def replace_ids_with_names(replicas, char_map):
+    updated = {}
+
+    for speaker_id, texts in replicas.items():
+        clean_id = speaker_id.replace("#", "")
+        name = char_map.get(clean_id, speaker_id)
+
+        updated[name] = texts
+
+    return updated
