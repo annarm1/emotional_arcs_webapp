@@ -72,7 +72,6 @@ def extract_character_replicas(xml_path):
         if not who:
             continue
 
-        # 🔴 разбиваем нескольких говорящих
         speakers = re.split(r"[ ,]+", who.strip())
 
         # текст
@@ -82,7 +81,6 @@ def extract_character_replicas(xml_path):
         if not text:
             continue
 
-        # 🔴 добавляем каждому персонажу
         for speaker in speakers:
             if speaker:  # защита от пустых строк
                 characters[speaker].append(text)
