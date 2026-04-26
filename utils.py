@@ -7,11 +7,6 @@ def smooth_signal(sentiments):
     filtered_sentiments = savgol_filter(sentiments, window_length=len(sentiments)//15, polyorder=0)
     return filtered_sentiments
 
-
-def normalize_positions(n):
-    return np.linspace(0, 1, n)
-
-
 def plot_curve_interactive(smoothed, sentiments, title=""):
     x = list(range(1, len(smoothed) + 1))  # номера сегментов
     

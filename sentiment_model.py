@@ -19,7 +19,7 @@ def load_model():
     return tokenizer, model
 
 
-def estimate_sentiment(messages: list) -> list:
+def estimate_sentiment(messages):
     tokenizer, model = load_model()
 
     sentiment_out = []
