@@ -79,6 +79,6 @@ def count_sentiment_lex(segments, lexicon):
                 i += 1
 
         if n > 0:
-            score = score / n * 100
+            score = score / n
         sentiments_out.append(score)
     return sentiments_out
