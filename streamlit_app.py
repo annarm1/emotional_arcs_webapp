@@ -15,8 +15,6 @@ data_mode = st.radio(
     ["TXT (один файл)", "TEI (XML) — с возможностью анализа речи персонажей"]
 )
 
-st.map()
-
 if data_mode == "TEI (XML) — с возможностью анализа речи персонажей":
 
     mode = st.radio(
