@@ -21,21 +21,6 @@ def prepare_segments_for_download(segments, sentiments):
     return "\n".join(lines)
 
 
-def overlap(max_val=5, default=2):
-    """
-    Функция для применения окна
-    """
-    st.subheader("🔁 Параметры контекстного окна")
-
-    use_overlap = st.checkbox("Добавить контекстное окно", value=True)
-
-    overlap_n = 0
-    if use_overlap:
-        overlap_n = st.slider("Размер окна (предложения)", 1, max_val, default)
-
-    return use_overlap, overlap_n
-
-
 def run_analysis(segments, mode, title):
     """
     Функция анализа и визуализации
@@ -66,13 +51,18 @@ def run_analysis(segments, mode, title):
     st.write(f"- Средняя тональность: {sum(sentiments)/len(sentiments):.3f}")
 
 
-def make_segments(paragraphs):
+def make_segments(paragraphs, mode):
     """
     Функция для сегментации (полная)
     """
+    
+    if mode == 'Арка персонажа':
+        st.write(f"Количество реплик: {len(paragraphs)}")
+        st.write(f"Среднее количество слов в реплике: {words_in_par_count(paragraphs)}")
 
-    st.write(f"Количество параграфов: {len(paragraphs)}")
-    st.write(f"Среднее количество слов в одном параграфе: {words_in_par_count(paragraphs)}")
+    elif mode == 'Общая сюжетная арка':
+        st.write(f'Количество параграфов: {len(paragraphs)}')
+        st.write(f'Среднее количество слов в одном параграфе: {words_in_par_count(paragraphs)}')
 
     min_words, max_words = segmentation_ui(
         150, 300,

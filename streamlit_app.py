@@ -1,5 +1,5 @@
 import streamlit as st
-from streamlit_funcitons import make_segments, run_analysis
+from streamlit_functions import make_segments, run_analysis
 from parser import parse_txt, extract_paragraphs, extract_character_names, extract_character_replicas, replace_ids_with_names
 
 
@@ -37,10 +37,13 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
                 ["Лексиконный (RuSentiLex)", "Нейросетевой (RuBERT)"]
             )
 
+
             paragraphs = extract_paragraphs(uploaded_file)
-            segments = make_segments(paragraphs)
+            st.divider()
+            segments = make_segments(paragraphs, mode)
 
             # --- Общая эмоциональная динамика ---
+            st.divider()
             st.subheader("📈 Эмоциональная динамика")
 
             if st.button("Построить эмоциональную арку"):
@@ -87,11 +90,15 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
             f"Количество реплик: {len(char_replicas)}"
             )
 
-            paragraphs = char_replicas
 
-            segments = make_segments(paragraphs)
+            paragraphs = char_replicas
+            st.divider()
+
+            segments = make_segments(paragraphs, mode)
 
             # --- 3. Общая эмоциональная динамика ---
+            st.divider()
+
             st.subheader("📈 Эмоциональная динамика")
 
             if st.button("Построить эмоциональную арку"):
@@ -110,9 +117,11 @@ elif data_mode == "TXT (один файл)":
             )
         
         paragraphs = parse_txt(uploaded_file)
+        st.divider()
         segments = make_segments(paragraphs)
 
         # --- 3. Общая эмоциональная динамика ---
+        st.divider()
         st.subheader("📈 Эмоциональная динамика")
 
         if st.button("Построить эмоциональную арку"):

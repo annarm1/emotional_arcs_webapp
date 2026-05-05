@@ -1,4 +1,3 @@
-import numpy as np
 import plotly.graph_objects as go
 from scipy.signal import savgol_filter
 
