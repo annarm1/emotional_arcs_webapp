@@ -118,7 +118,7 @@ elif data_mode == "TXT (один файл)":
         
         paragraphs = parse_txt(uploaded_file)
         st.divider()
-        segments = make_segments(paragraphs)
+        segments = make_segments(paragraphs, mode='txt')
 
         # --- 3. Общая эмоциональная динамика ---
         st.divider()
