@@ -2,9 +2,9 @@ streamlit
 torch
 transformers
 matplotlib
+plotly
 scipy
 lxml
 numpy
 nltk
-plotly
 pymorphy3

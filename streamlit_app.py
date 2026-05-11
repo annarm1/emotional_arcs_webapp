@@ -72,7 +72,7 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
             replicas = replace_ids_with_names(replicas, character_map)
             
             if not replicas:
-                st.warning("Недостаточно данных по персонажам")
+                st.warning("Недостаточно данных по персонажам или в файле применяются отличные от <speaker> теги для обозначения прямой речи")
                 st.stop()
             
             # сортировка по количеству реплик
