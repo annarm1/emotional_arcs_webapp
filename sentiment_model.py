@@ -39,13 +39,12 @@ def estimate_sentiment(messages):
 
     return sentiment_out
 
-def run_analysis(segments, mode):
+def run_analysis(segments, mode, lexicon=''):
     """
     Функция анализа и визуализации
     """
     if mode == 'Нейросетевой (RuBERT)':
         sentiments = estimate_sentiment(segments)
     elif mode == 'Лексиконный (RuSentiLex)':
-        lexicon = load_rusentilex("rusentilex_2017.txt")
         sentiments = count_sentiment_lex(segments, lexicon)
     return sentiments

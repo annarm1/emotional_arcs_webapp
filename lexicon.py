@@ -4,7 +4,10 @@ import pymorphy3  # type: ignore
 import nltk
 nltk.download('punkt')
 
+from parser import parse_word_list, parse_custom_lexicon
+
 morph = pymorphy3.MorphAnalyzer()
+
 
 def clean_text(text):
     """
@@ -91,3 +94,103 @@ def count_sentiment_lex(segments, lexicon):
             score = score / n * 100
         sentiments_out.append(score)
     return sentiments_out
+
+
+
+def lexicon_settings_ui():
+
+    lexicon_mode = st.radio(
+        "Источник словаря",
+        [
+            "Использовать RuSentiLex",
+            "Добавить слова в RuSentiLex",
+            "Загрузить собственный словарь"
+        ]
+    )
+
+    lexicon = load_rusentilex("rusentilex_2017.txt")
+
+    # ---------------- BASE ----------------
+
+    if lexicon_mode == "Использовать RuSentiLex":
+        return lexicon
+
+    # ---------------- EXTEND ----------------
+
+    elif lexicon_mode == "Добавить слова в RuSentiLex":
+
+        st.info(
+            "Загрузите TXT-файлы с дополнительной "
+            "лексикой. Каждая строка должна "
+            "содержать одно слово или выражение."
+        )
+
+        with st.expander(
+            "Пример формата словаря"
+        ):
+
+            st.code(
+            "лемма\nужасный\nстрашный\nВолан-де-Морт"
+                        )
+
+        uploaded_lexicon_pos = st.file_uploader(
+            "Положительная лексика",
+            type=["txt"]
+        )
+
+        uploaded_lexicon_neg = st.file_uploader(
+            "Отрицательная лексика",
+            type=["txt"]
+        )
+
+        if uploaded_lexicon_pos:
+
+            positive_words = parse_word_list(
+                uploaded_lexicon_pos
+            )
+
+            for word in positive_words:
+
+                if word not in lexicon:
+                    lexicon[word] = 1
+
+        if uploaded_lexicon_neg:
+
+            negative_words = parse_word_list(
+                uploaded_lexicon_neg
+            )
+
+            for word in negative_words:
+
+                if word not in lexicon:
+                    lexicon[word] = -1
+
+        return lexicon
+
+    # ---------------- CUSTOM ----------------
+
+    elif lexicon_mode == "Загрузить собственный словарь":
+
+        with st.expander(
+            "Формат пользовательского словаря"
+        ):
+
+            st.code(
+                """лемма\nтональность\nпрекрасный, positive\nужасный, negative\nрадость, positive"""
+                                )
+
+        uploaded_lexicon_user = st.file_uploader(
+            "TXT-файл словаря",
+            type=["txt"]
+        )
+
+        if uploaded_lexicon_user:
+            try:
+                return parse_custom_lexicon(
+                    uploaded_lexicon_user
+                )
+            except Exception:
+                st.error(
+                    "Не удалось обработать словарь."
+                )
+        return None

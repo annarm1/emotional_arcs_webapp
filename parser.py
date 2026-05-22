@@ -1,6 +1,7 @@
 from lxml import etree
 from collections import defaultdict
 import re
+import streamlit as st
 
 def parse_txt(file):
     text = file.read().decode("utf-8")
@@ -97,3 +98,56 @@ def replace_ids_with_names(replicas, char_map):
         updated[f'{name}, {speaker_id}'] = texts
 
     return updated
+
+
+def parse_word_list(uploaded_file):
+    """
+    Чтение TXT-файла:
+    одно слово или выражение на строку.
+    """
+
+    content = uploaded_file.read().decode("utf-8")
+
+    return [
+        line.strip()
+        for line in content.splitlines()
+        if line.strip()
+    ]
+
+
+def parse_custom_lexicon(uploaded_file):
+    """
+    Формат:
+    слово, positive
+    слово, negative
+    """
+
+    lexicon = {}
+
+    content = uploaded_file.read().decode("utf-8")
+
+    for line in content.splitlines():
+
+        line = line.strip()
+
+        if not line:
+            continue
+
+        try:
+            lemma, polarity = line.split(",")
+
+            lemma = lemma.strip()
+            polarity = polarity.strip().lower()
+
+            if polarity == "positive":
+                lexicon[lemma] = 1
+
+            elif polarity == "negative":
+                lexicon[lemma] = -1
+
+        except ValueError:
+            st.warning(
+                f"Не удалось обработать строку: {line}"
+            )
+
+    return lexicon

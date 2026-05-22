@@ -3,6 +3,7 @@ from parser import parse_txt, extract_paragraphs, extract_character_names, extra
 from utils import smooth_signal, plot_curve_interactive
 from segmentation import segmentation_settings_ui, segments_by_paragraphs, apply_overlap, prepare_segments_for_download
 from sentiment_model import run_analysis
+from lexicon import lexicon_settings_ui
 
 def reset_analysis_state(current_key):
 
@@ -49,6 +50,9 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
                 "Выберите метод анализа тональности:",
                 ["Лексиконный (RuSentiLex)", "Нейросетевой (RuBERT)"]
             )
+            
+            if model_type == 'Лексиконный (RuSentiLex)':
+                lexicon = lexicon_settings_ui()
 
             paragraphs = extract_paragraphs(uploaded_file)
 
@@ -83,7 +87,7 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
                 
             if st.button('Сегментировать текст'):
                 with st.spinner('Сегментируем и анализируем текст...'):
-                    sentiments = run_analysis(segments, model_type)
+                    sentiments = run_analysis(segments, model_type, lexicon)
                     st.session_state["sentiments"] = sentiments
             if "sentiments" in st.session_state:
                 prepare_segments_for_download(
@@ -192,7 +196,7 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
 
                 st.divider()
 
-                st.subheader("Построение графика")
+                st.subheader("График эмоциональной динамики")
 
                 smoothed_sentiments = smooth_signal(
                     st.session_state["sentiments"]
