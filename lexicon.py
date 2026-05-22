@@ -194,3 +194,4 @@ def lexicon_settings_ui():
                     "Не удалось обработать словарь."
                 )
         return None
+

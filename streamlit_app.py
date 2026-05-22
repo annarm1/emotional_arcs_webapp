@@ -127,6 +127,9 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
                 ["Лексиконный (RuSentiLex)", "Нейросетевой (RuBERT)"]
             )
             
+            if model_type == 'Лексиконный (RuSentiLex)':
+                lexicon = lexicon_settings_ui()
+            
             character_map = extract_character_names(uploaded_file)
             uploaded_file.seek(0)
             replicas = extract_character_replicas(uploaded_file)
@@ -222,6 +225,9 @@ elif data_mode == "TXT (один файл)":
                 ["Лексиконный (RuSentiLex)", "Нейросетевой (RuBERT)"]
             )
         
+        if model_type == 'Лексиконный (RuSentiLex)':
+            lexicon = lexicon_settings_ui()
+
         paragraphs = parse_txt(uploaded_file)
 
         mode = 'txt'
