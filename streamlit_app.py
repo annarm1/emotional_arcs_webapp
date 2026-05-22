@@ -114,6 +114,8 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
 
         # --------------АРКИ ПЕРСОНАЖЕЙ------------
     elif mode == "Арка персонажа":
+        custom_tag = None
+        speaker_attr = "who"
         uploaded_file = st.file_uploader(
                 "Загрузите документ с TEI-разметкой",
                 type=["xml"]
@@ -136,9 +138,6 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
                     "Пользовательский тег"
                 ]
             )
-
-            custom_tag = None
-            speaker_attr = "who"
             
             if speech_mode == "Пользовательский тег":
                 custom_tag = st.text_input(
@@ -198,7 +197,6 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
             min_words, max_words, use_overlap, overlap_sentences = (
                 segmentation_settings_ui(paragraphs, mode)
             )
-
 
             current_analysis_key = (
                 uploaded_file.name,
