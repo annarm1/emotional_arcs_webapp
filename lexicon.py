@@ -176,7 +176,7 @@ def lexicon_settings_ui():
         ):
 
             st.code(
-                """лемма\nтональность\nпрекрасный, positive\nужасный, negative\nрадость, positive"""
+                """лемма, тональность\nпрекрасный, positive\nужасный, negative\nрадость, positive"""
                                 )
 
         uploaded_lexicon_user = st.file_uploader(
