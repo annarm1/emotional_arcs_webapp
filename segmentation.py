@@ -4,13 +4,18 @@ import streamlit as st
 nltk.download('punkt')
 nltk.download('punkt_tab')
 
-def words_in_par_count(paragraphs):
-    count_words = []
-    for paragraph in paragraphs:
+def words_in_par_count(paragraphs): 
+    """ 
+    Подсчет слов в параграфе 
+    """ 
+    count_words = [] 
+    for paragraph in paragraphs: 
         count_words.append(len(nltk.word_tokenize(paragraph)))
+    
     return round(sum(count_words)/len(count_words))
 
-def segment_by_paragraphs(paragraphs, min_words, max_words):
+
+def segments_by_paragraphs(paragraphs, min_words, max_words):
     """
     Гибридная сегментация:
     - маленькие абзацы не изменяются
@@ -67,31 +72,45 @@ def segment_by_paragraphs(paragraphs, min_words, max_words):
     return chunks
 
 
-def window_with_overlap(segments, overlap_sentences):
-    """
-    Добавляет к каждому сегменту n последних предложений из предыдущего
-    """
-
+def apply_overlap(segments, overlap_sentences):
     result = []
 
     prev_sentences = []
 
     for segment in segments:
         current_sentences = nltk.sent_tokenize(segment)
-        overlap = prev_sentences[-overlap_sentences:] if prev_sentences else []
-        new_segment = " ".join(overlap + current_sentences)
 
-        result.append(new_segment)
+        overlap = (
+            prev_sentences[-overlap_sentences:]
+            if prev_sentences
+            else []
+        )
+
+        result.append(
+            " ".join(overlap + current_sentences)
+        )
 
         prev_sentences = current_sentences
 
     return result
 
 
-def segmentation_ui(min_def, max_def, min_range, max_range):
-    """
-    Функция для расчета min и max слов
-    """
+def segmentation_settings_ui(
+    paragraphs,
+    mode,
+    min_default=80,
+    max_default=200,
+    min_range=(20, 300),
+    max_range=(50, 500)
+):
+    if mode == 'Арка персонажа':
+        st.write(f"Количество реплик: {len(paragraphs)}")
+        st.write(f"Среднее количество слов в реплике: {words_in_par_count(paragraphs)}")
+
+    elif mode == 'Общая сюжетная арка' or mode == 'txt':
+        st.write(f'Количество параграфов: {len(paragraphs)}')
+        st.write(f'Среднее количество слов в одном параграфе: {words_in_par_count(paragraphs)}')
+
     st.subheader("⚙️ Параметры сегментации")
 
     st.info(
@@ -101,31 +120,99 @@ def segmentation_ui(min_def, max_def, min_range, max_range):
         "Чем больше сегментов, тем точнее анализ каждого, но также время загрузки может увеличиться. " \
     )
 
-    min_w = st.slider("Минимум слов", *min_range, min_def, step=10)
-    max_w = st.slider("Максимум слов", *max_range, max_def, step=10)
+    min_words = st.slider(
+        "Минимум слов",
+        *min_range,
+        min_default,
+        step=10
+    )
 
-    if min_w >= max_w:
+    max_words = st.slider(
+        "Максимум слов",
+        *max_range,
+        max_default,
+        step=10
+    )
+    
+    if min_words > max_words:
         st.warning("Минимальное значение должно быть меньше максимального")
         st.stop()
 
-    return min_w, max_w
-
-
-def overlap(max_val=5, default=2):
-    """
-    Функция для применения окна
-    """
+    st.subheader("🔁 Параметры контекстного окна")
+    
     st.info(
         "Контекстное окно добавляет n-количество предложений из предыдущего сегмента. " \
         "Благодаря этому динамика становится более плавной"
     )
 
-    st.subheader("🔁 Параметры контекстного окна")
+    use_overlap = st.checkbox(
+        "Добавить контекстное окно",
+        value=True
+    )
 
-    use_overlap = st.checkbox("Добавить контекстное окно", value=True)
+    overlap_sentences = 0
 
-    overlap_n = 0
     if use_overlap:
-        overlap_n = st.slider("Размер окна (предложения)", 1, max_val, default)
+        overlap_sentences = st.slider(
+            "Размер окна",
+            1,
+            5,
+            2
+        )
 
-    return use_overlap, overlap_n
+    return (
+        min_words,
+        max_words,
+        use_overlap,
+        overlap_sentences
+    )
+
+
+def segment_text(
+    paragraphs,
+    min_words,
+    max_words,
+    use_overlap,
+    overlap_sentences=2
+):
+    """
+    Полный pipeline сегментации текста.
+    """
+
+    segments = segments_by_paragraphs(
+        paragraphs,
+        min_words,
+        max_words
+    )
+
+    if use_overlap:
+        segments = apply_overlap(
+            segments,
+            overlap_sentences
+        )
+
+    return segments
+
+
+def prepare_segments_for_download(segments, sentiments):
+    """
+    Функция для полготовки файла с сегментами для загрузки
+    """
+    lines = []
+
+    for i, (segment, sentiment) in enumerate(zip(segments, sentiments), start=1):
+        lines.append(f"=== Сегмент {i} ===")
+        lines.append(f"Тональность: {round(sentiment, 3)}")
+        lines.append(segment)
+        lines.append("")
+
+    txt_data = "\n".join(lines)
+
+    st.download_button(
+        "📥 Скачать сегменты (.txt)",
+        txt_data,
+        "segments.txt",
+        "text/plain"
+    )
+
+    st.write(f'Результат: {len(segments)} сегментов')

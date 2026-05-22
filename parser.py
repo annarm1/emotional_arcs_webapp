@@ -1,8 +1,6 @@
 from lxml import etree
 from collections import defaultdict
 import re
-import streamlit as st
-
 
 def parse_txt(file):
     text = file.read().decode("utf-8")

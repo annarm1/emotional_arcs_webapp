@@ -1,6 +1,8 @@
 import streamlit as st
-from streamlit_functions import make_segments, run_analysis
 from parser import parse_txt, extract_paragraphs, extract_character_names, extract_character_replicas, replace_ids_with_names
+from utils import smooth_signal, plot_curve_interactive
+from segmentation import segmentation_settings_ui, segments_by_paragraphs, apply_overlap, prepare_segments_for_download
+from sentiment_model import run_analysis
 
 
 with st.spinner("Загрузка модели..."):
@@ -37,19 +39,52 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
                 ["Лексиконный (RuSentiLex)", "Нейросетевой (RuBERT)"]
             )
 
-
             paragraphs = extract_paragraphs(uploaded_file)
-            st.divider()
-            segments = make_segments(paragraphs, mode)
 
-            # --- Общая эмоциональная динамика ---
-            st.divider()
-            st.subheader("📈 Эмоциональная динамика")
+            min_words, max_words, use_overlap, overlap_sentences = (
+                segmentation_settings_ui(paragraphs, mode)
+            )
 
-            if st.button("Построить эмоциональную арку"):
-                run_analysis(segments, model_type, "Общая эмоциональная динамика")
-          
+            segments = segments_by_paragraphs(
+                paragraphs,
+                min_words,
+                max_words
+            )
 
+            if use_overlap:
+                segments = apply_overlap(
+                    segments,
+                    overlap_sentences
+                )
+
+            st.session_state["segments"] = segments
+                
+            if st.button('Сегментировать текст'):
+                with st.spinner('Сегментируем и анализируем текст...'):
+                    sentiments = run_analysis(segments, model_type)
+                    st.session_state["sentiments"] = sentiments
+            if "sentiments" in st.session_state:
+                prepare_segments_for_download(
+                    st.session_state["segments"],
+                    st.session_state["sentiments"]
+                )
+
+                st.divider()
+
+                st.subheader("Построение графика")
+
+                smoothed_sentiments = smooth_signal(
+                    st.session_state["sentiments"]
+                )
+
+                fig = plot_curve_interactive(
+                    smoothed_sentiments,
+                    st.session_state["sentiments"],
+                    'Общая эмоциональная динамика'
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+                
 
         # --------------АРКИ ПЕРСОНАЖЕЙ------------
     elif mode == "Арка персонажа":
@@ -92,17 +127,50 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
 
 
             paragraphs = char_replicas
-            st.divider()
 
-            segments = make_segments(paragraphs, mode)
+            min_words, max_words, use_overlap, overlap_sentences = (
+                segmentation_settings_ui(paragraphs, mode)
+            )
 
-            # --- 3. Общая эмоциональная динамика ---
-            st.divider()
+            segments = segments_by_paragraphs(
+                paragraphs,
+                min_words,
+                max_words
+            )
 
-            st.subheader("📈 Эмоциональная динамика")
+            if use_overlap:
+                segments = apply_overlap(
+                    segments,
+                    overlap_sentences
+                )
 
-            if st.button("Построить эмоциональную арку"):
-                run_analysis(segments, model_type, f"Эмоциональная арка. {selected_character}")
+            st.session_state["segments"] = segments
+                
+            if st.button('Сегментировать текст'):
+                with st.spinner('Сегментируем и анализируем текст...'):
+                    sentiments = run_analysis(segments, model_type)
+                    st.session_state["sentiments"] = sentiments
+            if "sentiments" in st.session_state:
+                prepare_segments_for_download(
+                    st.session_state["segments"],
+                    st.session_state["sentiments"]
+                )
+
+                st.divider()
+
+                st.subheader("Построение графика")
+
+                smoothed_sentiments = smooth_signal(
+                    st.session_state["sentiments"]
+                )
+
+                fig = plot_curve_interactive(
+                    smoothed_sentiments,
+                    st.session_state["sentiments"],
+                    f'Эмоциональная динамика {selected_character}'
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
 
 
 elif data_mode == "TXT (один файл)":
@@ -117,12 +185,48 @@ elif data_mode == "TXT (один файл)":
             )
         
         paragraphs = parse_txt(uploaded_file)
-        st.divider()
-        segments = make_segments(paragraphs, mode='txt')
 
-        # --- 3. Общая эмоциональная динамика ---
-        st.divider()
-        st.subheader("📈 Эмоциональная динамика")
+        mode = 'txt'
+        min_words, max_words, use_overlap, overlap_sentences = (
+            segmentation_settings_ui(paragraphs, mode)
+        )
 
-        if st.button("Построить эмоциональную арку"):
-            run_analysis(segments, model_type, "Общая эмоциональная динамика")
+        segments = segments_by_paragraphs(
+            paragraphs,
+            min_words,
+            max_words
+        )
+
+        if use_overlap:
+            segments = apply_overlap(
+                segments,
+                overlap_sentences
+            )
+
+        st.session_state["segments"] = segments
+                
+        if st.button('Сегментировать текст'):
+            with st.spinner('Сегментируем и анализируем текст...'):
+                sentiments = run_analysis(segments, model_type)
+                st.session_state["sentiments"] = sentiments
+        if "sentiments" in st.session_state:
+            prepare_segments_for_download(
+                st.session_state["segments"],
+                st.session_state["sentiments"]
+            )
+
+            st.divider()
+
+            st.subheader("Построение графика")
+
+            smoothed_sentiments = smooth_signal(
+                st.session_state["sentiments"]
+            )
+
+            fig = plot_curve_interactive(
+                smoothed_sentiments,
+                st.session_state["sentiments"],
+                'Общая эмоциональная динамика'
+            )
+
+            st.plotly_chart(fig, use_container_width=True)

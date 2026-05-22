@@ -7,6 +7,9 @@ nltk.download('punkt')
 morph = pymorphy3.MorphAnalyzer()
 
 def clean_text(text):
+    """
+    Очистка текста
+    """
     text = text.lower()
     text = re.sub(r"[^а-яё\s]", " ", text)
     text = re.sub(r"\s+", " ", text)
@@ -14,6 +17,9 @@ def clean_text(text):
 
 
 def lemmatize(cleaned_text):
+    """
+    Лемматизация
+    """
     words = cleaned_text.split()
     
     lemmas = [morph.parse(word)[0].normal_form for word in words if word]
@@ -49,6 +55,9 @@ def load_rusentilex(filepath):
     
 
 def count_sentiment_lex(segments, lexicon):
+    """
+    Подсчет тональности: лексиконный метод
+    """
     sentiments_out = []
     for segment in segments:
         max_ngram = 7
