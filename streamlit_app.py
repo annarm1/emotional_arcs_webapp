@@ -4,6 +4,17 @@ from utils import smooth_signal, plot_curve_interactive
 from segmentation import segmentation_settings_ui, segments_by_paragraphs, apply_overlap, prepare_segments_for_download
 from sentiment_model import run_analysis
 
+def reset_analysis_state(current_key):
+
+    if (
+        "analysis_key" not in st.session_state
+        or st.session_state["analysis_key"] != current_key
+    ):
+        st.session_state.pop("sentiments", None)
+        st.session_state.pop("segments", None)
+
+        st.session_state["analysis_key"] = current_key
+
 
 with st.spinner("Загрузка модели..."):
     from sentiment_model import load_model
@@ -44,6 +55,17 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
             min_words, max_words, use_overlap, overlap_sentences = (
                 segmentation_settings_ui(paragraphs, mode)
             )
+
+            current_analysis_key = (
+                uploaded_file.name,
+                min_words,
+                max_words,
+                use_overlap,
+                overlap_sentences,
+                model_type
+            )
+
+            reset_analysis_state(current_analysis_key)
 
             segments = segments_by_paragraphs(
                 paragraphs,
@@ -132,6 +154,18 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
                 segmentation_settings_ui(paragraphs, mode)
             )
 
+
+            current_analysis_key = (
+                uploaded_file.name,
+                min_words,
+                max_words,
+                use_overlap,
+                overlap_sentences,
+                model_type
+            )
+
+            reset_analysis_state(current_analysis_key)
+
             segments = segments_by_paragraphs(
                 paragraphs,
                 min_words,
@@ -190,7 +224,19 @@ elif data_mode == "TXT (один файл)":
         min_words, max_words, use_overlap, overlap_sentences = (
             segmentation_settings_ui(paragraphs, mode)
         )
+        
+        
+        current_analysis_key = (
+            uploaded_file.name,
+            min_words,
+            max_words,
+            use_overlap,
+            overlap_sentences,
+            model_type
+        )
 
+        reset_analysis_state(current_analysis_key)
+        
         segments = segments_by_paragraphs(
             paragraphs,
             min_words,
