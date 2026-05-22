@@ -21,6 +21,7 @@ with st.spinner("Загрузка модели..."):
     from sentiment_model import load_model
     load_model()
 
+lexicon = None
 
 st.title("📊 Анализ эмоциональной динамики текста")
 
@@ -138,7 +139,7 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
                     "Пользовательский тег"
                 ]
             )
-            
+
             if speech_mode == "Пользовательский тег":
                 custom_tag = st.text_input(
                     "Тег реплики",
@@ -225,7 +226,7 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
                 
             if st.button('Сегментировать текст и определить тональность'):
                 with st.spinner('Сегментируем и анализируем текст...'):
-                    sentiments = run_analysis(segments, model_type)
+                    sentiments = run_analysis(segments, model_type, lexicon)
                     st.session_state["sentiments"] = sentiments
             if "sentiments" in st.session_state:
                 prepare_segments_for_download(
@@ -299,7 +300,7 @@ elif data_mode == "TXT (один файл)":
                 
         if st.button('Сегментировать текст и определить тональность'):
             with st.spinner('Сегментируем и анализируем текст...'):
-                sentiments = run_analysis(segments, model_type)
+                sentiments = run_analysis(segments, model_type, lexicon)
                 st.session_state["sentiments"] = sentiments
         if "sentiments" in st.session_state:
             prepare_segments_for_download(
