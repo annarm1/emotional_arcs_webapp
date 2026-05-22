@@ -85,7 +85,7 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
 
             st.session_state["segments"] = segments
                 
-            if st.button('Сегментировать текст'):
+            if st.button('Сегментировать текст и определить тональность'):
                 with st.spinner('Сегментируем и анализируем текст...'):
                     sentiments = run_analysis(segments, model_type, lexicon)
                     st.session_state["sentiments"] = sentiments
@@ -122,6 +122,35 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
         if uploaded_file:
             st.success("Файл успешно загружен!")
 
+
+            st.caption(
+                "Поддерживаются распространённые "
+                "варианты TEI-разметки речи."
+            )
+
+            speech_mode = st.radio(
+                "Формат разметки реплик",
+                [
+                    "TEI <said>",
+                    "TEI <sp>",
+                    "Пользовательский тег"
+                ]
+            )
+
+            custom_tag = None
+            speaker_attr = "who"
+            
+            if speech_mode == "Пользовательский тег":
+                custom_tag = st.text_input(
+                    "Тег реплики",
+                    value="said"
+                )
+            
+                speaker_attr = st.text_input(
+                    "Атрибут персонажа",
+                    value="who"
+                )
+            
             model_type = st.radio(
                 "Выберите метод анализа тональности:",
                 ["Лексиконный (RuSentiLex)", "Нейросетевой (RuBERT)"]
@@ -130,13 +159,22 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
             if model_type == 'Лексиконный (RuSentiLex)':
                 lexicon = lexicon_settings_ui()
             
-            character_map = extract_character_names(uploaded_file)
-            uploaded_file.seek(0)
-            replicas = extract_character_replicas(uploaded_file)
-            replicas = replace_ids_with_names(replicas, character_map)
+            if speech_mode != "Пользовательский тег":
+                character_map = extract_character_names(uploaded_file)
+                uploaded_file.seek(0)
+            
+            replicas = extract_character_replicas(
+                file=uploaded_file,
+                speech_mode=speech_mode,
+                custom_tag=custom_tag,
+                speaker_attr=speaker_attr
+            )
+
+            if speech_mode != "Пользовательский тег":
+                replicas = replace_ids_with_names(replicas, character_map)
             
             if not replicas:
-                st.warning("Недостаточно данных по персонажам или в файле применяются отличные от <speaker> теги для обозначения прямой речи")
+                st.warning("Недостаточно данных по персонажам.")
                 st.stop()
             
             # сортировка по количеству реплик
@@ -187,7 +225,7 @@ if data_mode == "TEI (XML) — с возможностью анализа реч
 
             st.session_state["segments"] = segments
                 
-            if st.button('Сегментировать текст'):
+            if st.button('Сегментировать текст и определить тональность'):
                 with st.spinner('Сегментируем и анализируем текст...'):
                     sentiments = run_analysis(segments, model_type)
                     st.session_state["sentiments"] = sentiments
@@ -261,7 +299,7 @@ elif data_mode == "TXT (один файл)":
 
         st.session_state["segments"] = segments
                 
-        if st.button('Сегментировать текст'):
+        if st.button('Сегментировать текст и определить тональность'):
             with st.spinner('Сегментируем и анализируем текст...'):
                 sentiments = run_analysis(segments, model_type)
                 st.session_state["sentiments"] = sentiments

@@ -130,41 +130,21 @@ def lexicon_settings_ui():
         ):
 
             st.code(
-            "лемма\nужасный\nстрашный\nВолан-де-Морт"
+            "лемма, тональность" \
+            "\nужасный, negative" \
+            "\nпрекрасный, positive" \
+            "\nстрашный, negative" \
+            "\nВолан-де-Морт, negative" \
+            "\nрадость, positive"
                         )
 
-        uploaded_lexicon_pos = st.file_uploader(
-            "Положительная лексика",
+        uploaded_lexicon = st.file_uploader(
+            "TXT-файл слов для добавления к RuSentiLex",
             type=["txt"]
         )
 
-        uploaded_lexicon_neg = st.file_uploader(
-            "Отрицательная лексика",
-            type=["txt"]
-        )
-
-        if uploaded_lexicon_pos:
-
-            positive_words = parse_word_list(
-                uploaded_lexicon_pos
-            )
-
-            for word in positive_words:
-
-                if word not in lexicon:
-                    lexicon[word] = 1
-
-        if uploaded_lexicon_neg:
-
-            negative_words = parse_word_list(
-                uploaded_lexicon_neg
-            )
-
-            for word in negative_words:
-
-                if word not in lexicon:
-                    lexicon[word] = -1
-
+        if uploaded_lexicon:
+            lexicon = parse_word_list(uploaded_lexicon)
         return lexicon
 
     # ---------------- CUSTOM ----------------
@@ -176,8 +156,14 @@ def lexicon_settings_ui():
         ):
 
             st.code(
-                """лемма, тональность\nпрекрасный, positive\nужасный, negative\nрадость, positive"""
-                                )
+            "лемма, тональность" \
+            "\nужасный, negative" \
+            "\nпрекрасный, positive" \
+            "\nстрашный, negative" \
+            "\nВолан-де-Морт, negative" \
+            "\nрадость, positive"
+                        )
+
 
         uploaded_lexicon_user = st.file_uploader(
             "TXT-файл словаря",
