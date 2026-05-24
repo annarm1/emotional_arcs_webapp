@@ -57,13 +57,24 @@ def load_rusentilex(filepath):
         return lexicon
     
 
+
 def count_sentiment_lex(segments, lexicon):
     """
-    Подсчет тональности: лексиконный метод
+    Подсчет тональности: лексиконный метод с учетом негации
     """
+    negations = {
+    "никто", "никого", "никем", "ничто", "ничем", "ничего",
+    "ни", "никакой", "никакого", "никаких", "никаким",
+    "никак", "ничей", "ничьих", "нисколько", "никогда",
+    "нигде", "никуда", "некого", "нельзя", "нечего",
+    "незачем", "нет", "едва", "не", "ничуть"
+}
+    
     sentiments_out = []
+
     for segment in segments:
         max_ngram = 7
+
         segment = clean_text(segment)
         words = lemmatize(segment).split()
 
@@ -74,25 +85,33 @@ def count_sentiment_lex(segments, lexicon):
         while i < n:
             matched = False
 
-            # пробуем самые длинные выражения
+            # пробуем n-граммы от длинных к коротким
             for size in range(max_ngram, 0, -1):
+
                 if i + size > n:
                     continue
 
                 phrase = " ".join(words[i:i+size])
 
                 if phrase in lexicon:
-                    score += lexicon[phrase]
+                    sentiment = lexicon[phrase]
+
+                    # проверяем отрицание перед фразой
+                    if i > 0 and words[i - 1] in negations:
+                        sentiment = -sentiment
+                    score += sentiment
                     i += size
                     matched = True
                     break
-
+                
             if not matched:
                 i += 1
 
         if n > 0:
             score = score / n * 100
+
         sentiments_out.append(score)
+
     return sentiments_out
 
 
